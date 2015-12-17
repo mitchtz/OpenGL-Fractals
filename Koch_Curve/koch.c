@@ -1,7 +1,4 @@
-/*
- * GL06TimerFunc.cpp: Translation and Rotation
- * Transform primitives from their model spaces to world space (Model Transform).
- */
+//Mitch Zinser
 #include <windows.h>  // for MS Windows
 #include <GL/glut.h>  // GLUT, include glu.h and gl.h
 #include <math.h>
@@ -63,7 +60,7 @@ void initGL() {
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and opaque
 }
 
-/*Function that draws a section of the Kock curve. This section is a 1 length line split in 3 parts with the center being an equilateral triangle*/
+/*Function that draws a section of the Koch curve. This section is a 1 length line split in 3 parts with the center being an equilateral triangle*/
 /*Recursive. Takes in cycles left to draw*/
 void Koch(int cycles) {
    glPushMatrix();
@@ -255,7 +252,7 @@ int main(int argc, char** argv) {
    glutInitDisplayMode(GLUT_DOUBLE);  // Enable double buffered mode
    glutInitWindowSize(640, 480);   // Set the window's initial width & height - non-square
    glutInitWindowPosition(50, 50); // Position the window's initial top-left corner
-   glutCreateWindow("Koch Fractal");  // Create window with the given title
+   glutCreateWindow("Koch Curve Fractal");  // Create window with the given title
    glutDisplayFunc(display);       // Register callback handler for window re-paint event
    glutReshapeFunc(reshape);       // Register callback handler for window re-size event
    //glutTimerFunc(0, Timer, 0);     // First timer call immediately

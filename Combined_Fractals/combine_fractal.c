@@ -24,7 +24,7 @@ double third = 1.0/3.0;
 double look_x = 0.0;
 double look_y = 0.0;
 //How far to zoom in (by scaling)
-double zoom = 2.0;
+double zoom = 4.0;
 //Number of repetitions, cycles
 int repetitions = 0;
 //Scaling factor
@@ -33,6 +33,12 @@ double scale_factor = 0.5;
 double scale_angle = 45;
 //Turn colorful branches on or off
 int color = 0;
+/*Which fractal to draw
+* 0-Koch Curve
+* 1-Binary Tree
+* 2-Sierpinski Carpet
+*/
+int mode = 0;
 //Global pointer to dynamic 2D array of points to draw
 int *frac_points = NULL;
 double red,green,blue;
@@ -61,7 +67,47 @@ void initGL() {
    // Set "clearing" or background color
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and opaque
 }
-
+/*Function that draws a section of the Koch curve. This section is a 1 length line split in 3 parts with the center being an equilateral triangle*/
+/*Recursive. Takes in cycles left to draw*/
+void Koch(int cycles) {
+   glPushMatrix();
+   //Scale to 1/3 size
+   glScaled(third,third,third);
+   //Base case
+   //If there is no more cycles, draw triangle
+   if (cycles == 0) {
+      glColor3f(1.0,1.0,1.0);
+      glBegin(GL_LINE_STRIP);
+      glVertex2f(0.0,0.0);
+      glVertex2f(1.0,0.0);
+      glEnd();
+   }
+   //Otherwise draw triangle
+   else {
+      //Otherwise draw sections
+      //Left, call Koch
+      Koch(cycles-1);
+      //Move 1/3 over 
+      glTranslated(third,0.0,0.0);
+      //Rotate 60 degrees around z axis
+      glRotated(60, 0,0,1);
+      //Left side of triangle
+      Koch(cycles-1);
+      //Move up to peak
+      glTranslated(third,0.0,0.0);
+      //Rotate back and down other side
+      glRotated(-120, 0,0,1);
+      //Right side of triangle
+      Koch(cycles-1);
+      //Move down to last section
+      glTranslated(third,0.0,0.0);
+      //Rotate back to flat
+      glRotated(60, 0,0,1);
+      //Right
+      Koch(cycles-1);
+   }
+   glPopMatrix();
+}
 /*Function that draws a section of the Binary Tree fractal. Draws a branch
 *Recursive. Takes in cycles left to draw, scaling faactor, and angle between branches*/
 void Bin_Tree(int cycles, double scale, double angle) {
@@ -113,7 +159,54 @@ void Bin_Tree(int cycles, double scale, double angle) {
    }
    glPopMatrix();
 }
-
+/*Function that draws a section of the Sierpinski Carpet fractal. Draws a square for base case
+*Recursive. Takes in cycles left to draw*/
+void Sierpinski(int cycles, int color_num) {
+   glPushMatrix();
+   //Scale to 1/3 size
+   glScaled(third,third,third);
+   //Base case
+   //If there is no more cycles, draw trunk (line)
+   if (cycles == 0) {
+      glColor3f(1.0,1.0,1.0);
+      glBegin(GL_QUADS);
+      glVertex2f(-0.5,-0.5);
+      glVertex2f(0.5,-0.5);
+      glVertex2f(0.5,0.5);
+      glVertex2f(-0.5,0.5);
+      glEnd();
+   }
+   //Otherwise square of 8 squares (middle not filled in)
+   else {
+      
+   
+      //Move to bottom left, call Sierpinski
+      glTranslated(-third,-third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to bottom middle, call Sierpinski
+      glTranslated(third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to bottom right, call Sierpinski
+      glTranslated(third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to middle right, call Sierpinski
+      glTranslated(0,third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper right, call Sierpinski
+      glTranslated(0,third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper middle, call Sierpinski
+      glTranslated(-third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper left, call Sierpinski
+      glTranslated(-third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to middle left, call Sierpinski
+      glTranslated(0,-third,0);
+      Sierpinski(cycles-1, color_num+1);
+   }
+   glPopMatrix();
+}
 /* Handler for window-repaint event. Call back when the window first appears and
    whenever the window needs to be re-painted. */
 void display() {
@@ -125,15 +218,50 @@ void display() {
    glScaled(zoom,zoom,zoom);
    //Move for zooming
    glTranslated(look_x,look_y,0.0);
-   //Center shape
-   glTranslated(0.0,-0.25,0.0);
-   //Call Koch
-   Bin_Tree(repetitions,scale_factor,scale_angle);
+   //Switch modes
+   switch (mode) {
+      //Koch Curve
+      case 0:
+         //Center shape
+         glTranslated(-third*0.5,0.0,0.0);
+         //Call Koch
+         Koch(repetitions);
+         break;
+      //Binary Tree
+      case 1:
+         //Center shape
+         glTranslated(0.0,-0.25,0.0);
+         //Call Binary Tree
+         Bin_Tree(repetitions,scale_factor,scale_angle);
+         break;
+      //Sierpinski Carpet
+      case 2:
+         //Center shape
+         glTranslated(0.0,0.0,0.0);
+         //Call Koch
+         Sierpinski(repetitions,0);
+         break;
+   }
+
    //glPopMatrix(); // Restore the model-view matrix
    glColor3f(1.0,1.0,1.0);
    //  Display parameters
-   glWindowPos2i(5,5);
+   glWindowPos2i(5,25);
+
    Print("Repetitions:%d Angle:%.1f Factor:%.2f Color:%s",repetitions,scale_angle,scale_factor,color?"On":"Off");
+   //  Display fractal being displayed
+   glWindowPos2i(5,5);
+   switch (mode) {
+      case 0:
+         Print("Koch Curve");
+         break;
+      case 1:
+         Print("Binary Tree");
+         break;
+      case 2:
+         Print("Sierpinski Carpet");
+         break;
+   }
    
    glFlush();
    glutSwapBuffers();   // Double buffered - swap the front and back buffers
@@ -221,8 +349,25 @@ void key(unsigned char ch,int x,int y)
    if (ch == 27)
       exit(0);
    else if (ch == '0') {
-      look_x = look_y = 0.0;
-      zoom = 3.0;
+      //Change reset based on mode
+      switch (mode) {
+         //Koch Curve
+         case 0:
+            look_x = look_y = 0.0;
+            zoom = 4.0;
+            break;
+         //Binary Tree
+         case 1:
+            look_x = look_y = 0.0;
+            zoom = 2.0;
+            break;
+         //Sierpinski Carpet
+         case 2:
+            look_x = look_y = 0.0;
+            zoom = 4.0;
+            break;
+      }
+      
    }
    //Pre set shapes
    //Savannah Tree
@@ -282,6 +427,31 @@ void key(unsigned char ch,int x,int y)
    else if (ch == 'c' || ch == 'C') {
       color = 1-color;
    }
+   //Change mode
+   else if (ch == 'm' || ch == 'M') {
+      //Reset repetitions
+      repetitions = 0;
+      //Change mode
+      mode = (mode+1)%3;
+      //Change zoom based on mode
+      switch (mode) {
+         //Koch Curve
+         case 0:
+            look_x = look_y = 0.0;
+            zoom = 4.0;
+            break;
+         //Binary Tree
+         case 1:
+            look_x = look_y = 0.0;
+            zoom = 2.0;
+            break;
+         //Sierpinski Carpet
+         case 2:
+            look_x = look_y = 0.0;
+            zoom = 4.0;
+            break;
+      }
+   }
 
    //  Update state
    timer(-1);
@@ -297,7 +467,7 @@ int main(int argc, char** argv) {
    glutInitDisplayMode(GLUT_DOUBLE);  // Enable double buffered mode
    glutInitWindowSize(640, 480);   // Set the window's initial width & height - non-square
    glutInitWindowPosition(50, 50); // Position the window's initial top-left corner
-   glutCreateWindow("Binary Tree Fractal");  // Create window with the given title
+   glutCreateWindow("Fractals");  // Create window with the given title
    glutDisplayFunc(display);       // Register callback handler for window re-paint event
    glutReshapeFunc(reshape);       // Register callback handler for window re-size event
    //glutTimerFunc(0, Timer, 0);     // First timer call immediately

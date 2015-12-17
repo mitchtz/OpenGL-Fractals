@@ -27,12 +27,6 @@ double look_y = 0.0;
 double zoom = 2.0;
 //Number of repetitions, cycles
 int repetitions = 0;
-//Scaling factor
-double scale_factor = 0.5;
-//Angle
-double scale_angle = 45;
-//Turn colorful branches on or off
-int color = 0;
 //Global pointer to dynamic 2D array of points to draw
 int *frac_points = NULL;
 double red,green,blue;
@@ -62,54 +56,51 @@ void initGL() {
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and opaque
 }
 
-/*Function that draws a section of the Binary Tree fractal. Draws a branch
-*Recursive. Takes in cycles left to draw, scaling faactor, and angle between branches*/
-void Bin_Tree(int cycles, double scale, double angle) {
+/*Function that draws a section of the Sierpinski Carpet fractal. Draws a square for base case
+*Recursive. Takes in cycles left to draw*/
+void Sierpinski(int cycles, int color_num) {
    glPushMatrix();
    //Scale to 1/3 size
-   glScaled(scale,scale,scale);
+   glScaled(third,third,third);
    //Base case
    //If there is no more cycles, draw trunk (line)
    if (cycles == 0) {
-      glColor3f(0.0,1.0,0.0);
-      glBegin(GL_LINE_STRIP);
-      glVertex2f(0.0,0.0);
-      glVertex2f(0.0,1.0);
+      glColor3f(1.0,1.0,1.0);
+      glBegin(GL_QUADS);
+      glVertex2f(-0.5,-0.5);
+      glVertex2f(0.5,-0.5);
+      glVertex2f(0.5,0.5);
+      glVertex2f(-0.5,0.5);
       glEnd();
    }
-   //Otherwise branches
+   //Otherwise square of 8 squares (middle not filled in)
    else {
-      //Color based on cycles left to draw
-      if (color) {
-         mod = (int)(cycles*10)%32;
-         red   = sin(frequency * mod + 0) * 127 + 128;
-         green = sin(frequency * mod + 2) * 127 + 128;
-         blue  = sin(frequency * mod + 4) * 127 + 128;
-      }
-      //Brown for branch
-      else {
-         red = 200.0;
-         green = 100.0;
-         blue = 0.0;
-      }
-      glColor3f(red/255.0,green/255.0,blue/255.0);
+      
    
-      //Draw branch
-      //glColor3f(200.0/255.0,100.0/255.0,0.0);
-      glBegin(GL_LINE_STRIP);
-      glVertex2f(0.0,0.0);
-      glVertex2f(0.0,1.0);
-      glEnd();
-      //Move to end of branch
-      glTranslated(0,1.0,0);
-      //Rotate to left branch, call binary tree again
-      glRotated(-angle ,0,0,1);
-      //Call binary tree
-      Bin_Tree(cycles-1,scale,angle);
-      //Rotate back to center and to right
-      glRotated(2*angle, 0,0,1);
-      //Call binary tree
-      Bin_Tree(cycles-1,scale,angle);
+      //Move to bottom left, call Sierpinski
+      glTranslated(-third,-third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to bottom middle, call Sierpinski
+      glTranslated(third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to bottom right, call Sierpinski
+      glTranslated(third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to middle right, call Sierpinski
+      glTranslated(0,third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper right, call Sierpinski
+      glTranslated(0,third,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper middle, call Sierpinski
+      glTranslated(-third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to upper left, call Sierpinski
+      glTranslated(-third,0,0);
+      Sierpinski(cycles-1, color_num+1);
+      //Move to middle left, call Sierpinski
+      glTranslated(0,-third,0);
+      Sierpinski(cycles-1, color_num+1);
    }
    glPopMatrix();
 }
@@ -126,14 +117,14 @@ void display() {
    //Move for zooming
    glTranslated(look_x,look_y,0.0);
    //Center shape
-   glTranslated(0.0,-0.25,0.0);
+   glTranslated(0.0,0.0,0.0);
    //Call Koch
-   Bin_Tree(repetitions,scale_factor,scale_angle);
+   Sierpinski(repetitions,0);
    //glPopMatrix(); // Restore the model-view matrix
    glColor3f(1.0,1.0,1.0);
    //  Display parameters
    glWindowPos2i(5,5);
-   Print("Repetitions:%d Angle:%.1f Factor:%.2f Color:%s",repetitions,scale_angle,scale_factor,color?"On":"Off");
+   Print("Repetitions:%d",repetitions);
    
    glFlush();
    glutSwapBuffers();   // Double buffered - swap the front and back buffers
@@ -224,27 +215,6 @@ void key(unsigned char ch,int x,int y)
       look_x = look_y = 0.0;
       zoom = 3.0;
    }
-   //Pre set shapes
-   //Savannah Tree
-   else if (ch == '1') {
-      scale_angle = 30.0;
-      scale_factor = 0.7;
-   }
-   //Upside down triangle?
-   else if (ch == '2') {
-      scale_angle = 120.0;
-      scale_factor = 0.7;
-   }
-   //Wrapping Savannah Tree
-   else if (ch == '3') {
-      scale_angle = 39.0;
-      scale_factor = 0.7;
-   }
-   //Pentagon Path
-   else if (ch == '4') {
-      scale_angle = 140.0;
-      scale_factor = 0.65;
-   }
    //Increase 
    else if (ch == 'p') {
       repetitions++;
@@ -254,33 +224,6 @@ void key(unsigned char ch,int x,int y)
    else if (ch == 'P' && repetitions > 0) {
       repetitions--;
       //printf("Repetitions:%d\n", repetitions);
-   }
-   
-   //Increase scale angle
-   else if (ch == 'a') {
-      scale_angle+=0.5;
-      //printf("Frequency Increment:%.1f\n", scale_angle);
-   }
-   //Decrease scale angle
-   else if (ch == 'A') {
-      scale_angle-=0.5;
-      //printf("Frequency Increment:%.1f\n", scale_angle);
-   }
-
-   //Increase scale factor
-   else if (ch == 'f') {
-      scale_factor+=0.05;
-      //printf("Frequency Increment:%.2f\n", scale_factor);
-   }
-   //Decrease scale factor
-   else if (ch == 'F') {
-      scale_factor-=0.05;
-      //printf("Frequency Increment:%.2f\n", scale_factor);
-   }
-
-   //Toggle colorful branches
-   else if (ch == 'c' || ch == 'C') {
-      color = 1-color;
    }
 
    //  Update state
@@ -297,7 +240,7 @@ int main(int argc, char** argv) {
    glutInitDisplayMode(GLUT_DOUBLE);  // Enable double buffered mode
    glutInitWindowSize(640, 480);   // Set the window's initial width & height - non-square
    glutInitWindowPosition(50, 50); // Position the window's initial top-left corner
-   glutCreateWindow("Binary Tree Fractal");  // Create window with the given title
+   glutCreateWindow("Sierpinski Carpet Fractal");  // Create window with the given title
    glutDisplayFunc(display);       // Register callback handler for window re-paint event
    glutReshapeFunc(reshape);       // Register callback handler for window re-size event
    //glutTimerFunc(0, Timer, 0);     // First timer call immediately
