@@ -197,7 +197,7 @@ void special(int key,int x,int y)
       zoom = zoom*1.5;
    //  PageDown key - zoom out
    else if (key == GLUT_KEY_PAGE_DOWN)
-      zoom = zoom*1.5;
+      zoom = zoom/1.5;
    //  Update state
    timer(-1);
    //Redisplay

@@ -26,12 +26,17 @@ double third = 1.0/3.0;
 double look_x = 0.0;
 double look_y = 0.0;
 //How far to zoom in (by scaling)
-double zoom = 3.0;
+double zoom = 2.0;
 //Number of repetitions, cycles
 int repetitions = 0;
+//Scaling factor
+double scale_factor = 0.5;
+//Angle
+double scale_angle = 45;
 //Global pointer to dynamic 2D array of points to draw
 int *frac_points = NULL;
-
+double red,green,blue;
+int mod;
 /*
  *  Convenience routine to output raster text
  *  Use VARARGS to make this more flexible
@@ -57,16 +62,16 @@ void initGL() {
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and opaque
 }
 
-/*Function that draws a section of the Kock curve. This section is a 1 length line split in 3 parts with the center being an equilateral triangle*/
-/*Recursive. Takes in cycles left to draw*/
-void Bin_Tree(int cycles) {
+/*Function that draws a section of the Binary Tree fractal. Draws a branch
+*Recursive. Takes in cycles left to draw, scaling faactor, and angle between branches*/
+void Bin_Tree(int cycles, double scale, double angle) {
    glPushMatrix();
    //Scale to 1/3 size
-   glScaled(third,third,third);
+   glScaled(scale,scale,scale);
    //Base case
    //If there is no more cycles, draw trunk (line)
    if (cycles == 0) {
-      glColor3f(1.0,1.0,1.0);
+      glColor3f(0.0,1.0,0.0);
       glBegin(GL_LINE_STRIP);
       glVertex2f(0.0,0.0);
       glVertex2f(0.0,1.0);
@@ -74,27 +79,29 @@ void Bin_Tree(int cycles) {
    }
    //Otherwise branches
    else {
+      /*
+      mod = (int)(timer_num*10)%32;
+      red   = sin(frequency * mod + 0) * 127 + 128;
+   green = sin(frequency * mod + 2) * 127 + 128;
+   blue  = sin(frequency * mod + 4) * 127 + 128;
+   glColor3f(red/255.0,green/255.0,blue/255.0);
+   */
+      //Draw branch
+      glColor3f(200.0/255.0,100.0/255.0,0.0);
+      glBegin(GL_LINE_STRIP);
+      glVertex2f(0.0,0.0);
+      glVertex2f(0.0,1.0);
+      glEnd();
       //Move to end of branch
-      //Left, call Koch
-      Koch(cycles-1);
-      //Move 1/3 over 
-      glTranslated(third,0.0,0.0);
-      //Rotate 60 degrees around z axis
-      glRotated(60, 0,0,1);
-      //Left side of triangle
-      Koch(cycles-1);
-      //Move up to peak
-      glTranslated(third,0.0,0.0);
-      //Rotate back and down other side
-      glRotated(-120, 0,0,1);
-      //Right side of triangle
-      Koch(cycles-1);
-      //Move down to last section
-      glTranslated(third,0.0,0.0);
-      //Rotate back to flat
-      glRotated(60, 0,0,1);
-      //Right
-      Koch(cycles-1);
+      glTranslated(0,1.0,0);
+      //Rotate to left branch, call binary tree again
+      glRotated(-angle ,0,0,1);
+      //Call binary tree
+      Bin_Tree(cycles-1,scale,angle);
+      //Rotate back to center and to right
+      glRotated(2*angle, 0,0,1);
+      //Call binary tree
+      Bin_Tree(cycles-1,scale,angle);
    }
    glPopMatrix();
 }
@@ -111,14 +118,14 @@ void display() {
    //Move for zooming
    glTranslated(look_x,look_y,0.0);
    //Center shape
-   glTranslated(-third*0.5,0.0,0.0);
+   glTranslated(0.0,-0.25,0.0);
    //Call Koch
-   Koch(repetitions);
+   Bin_Tree(repetitions,scale_factor,scale_angle);
    //glPopMatrix(); // Restore the model-view matrix
-   
+   glColor3f(1.0,1.0,1.0);
    //  Display parameters
    glWindowPos2i(5,5);
-   Print("Repetitions:%d",repetitions);
+   Print("Repetitions:%d Angle:%.1f Factor:%.2f",repetitions,scale_angle,scale_factor);
    
    glFlush();
    glutSwapBuffers();   // Double buffered - swap the front and back buffers
@@ -191,7 +198,7 @@ void special(int key,int x,int y)
       zoom = zoom*1.5;
    //  PageDown key - zoom out
    else if (key == GLUT_KEY_PAGE_DOWN)
-      zoom = zoom*1.5;
+      zoom = zoom/1.5;
    //  Update state
    timer(-1);
    //Redisplay
@@ -212,28 +219,35 @@ void key(unsigned char ch,int x,int y)
    //Increase 
    else if (ch == 'p') {
       repetitions++;
-      printf("Repetitions:%d\n", repetitions);
+      //printf("Repetitions:%d\n", repetitions);
    }
    //Decrease points
    else if (ch == 'P' && repetitions > 0) {
       repetitions--;
-      printf("Repetitions:%d\n", repetitions);
+      //printf("Repetitions:%d\n", repetitions);
    }
-   /*
-   //Increase frequency
+   
+   //Increase scale angle
+   else if (ch == 'a') {
+      scale_angle+=0.5;
+      //printf("Frequency Increment:%.1f\n", scale_angle);
+   }
+   //Decrease scale angle
+   else if (ch == 'A') {
+      scale_angle-=0.5;
+      //printf("Frequency Increment:%.1f\n", scale_angle);
+   }
+
+   //Increase scale factor
    else if (ch == 'f') {
-      freq_inc+=0.005;
-      printf("Frequency Increment:%.4f\n", freq_inc);
+      scale_factor+=0.05;
+      //printf("Frequency Increment:%.2f\n", scale_factor);
    }
-   //Decrease frequency
+   //Decrease scale factor
    else if (ch == 'F') {
-      freq_inc-=0.005;
-      printf("Frequency Increment:%.4f\n", freq_inc);
+      scale_factor-=0.05;
+      //printf("Frequency Increment:%.2f\n", scale_factor);
    }
-   //Toggle movement
-   else if (ch == 'm' || ch == 'M')
-      movement = 1-movement;
-   */
 
    //  Update state
    timer(-1);
