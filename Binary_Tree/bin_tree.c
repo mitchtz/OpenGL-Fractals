@@ -216,6 +216,27 @@ void key(unsigned char ch,int x,int y)
       look_x = look_y = 0.0;
       zoom = 3.0;
    }
+   //Pre set shapes
+   //Savannah Tree
+   else if (ch == '1') {
+      scale_angle = 30.0;
+      scale_factor = 0.7;
+   }
+   //Upside down triangle?
+   else if (ch == '2') {
+      scale_angle = 120.0;
+      scale_factor = 0.7;
+   }
+   //Wrapping Savannah Tree
+   else if (ch == '3') {
+      scale_angle = 39.0;
+      scale_factor = 0.7;
+   }
+   //Pentagon Path
+   else if (ch == '4') {
+      scale_angle = 140.0;
+      scale_factor = 0.65;
+   }
    //Increase 
    else if (ch == 'p') {
       repetitions++;
